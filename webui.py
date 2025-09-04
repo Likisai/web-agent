@@ -13,7 +13,19 @@ import os
 logger = logging.getLogger(__name__)
 
 import gradio as gr
+import gradio_client.utils as gr_utils
 
+# --- PATCH START ---
+def _patched_json_schema_to_python_type(schema, defs=None):
+    if isinstance(schema, bool):
+        # JSON Schema allows True/False for "additionalProperties"
+        return "Any" if schema else "None"
+    return gr_utils._original_json_schema_to_python_type(schema, defs)
+
+if not hasattr(gr_utils, "_original_json_schema_to_python_type"):
+    gr_utils._original_json_schema_to_python_type = gr_utils._json_schema_to_python_type
+    gr_utils._json_schema_to_python_type = _patched_json_schema_to_python_type
+# --- PATCH END ---
 from browser_use.agent.service import Agent
 from playwright.async_api import async_playwright
 from browser_use.browser.browser import Browser, BrowserConfig
@@ -1097,3 +1109,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
